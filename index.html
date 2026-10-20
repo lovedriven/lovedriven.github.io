@@ -38,6 +38,9 @@
   .ticker b { color:#7fe0cb; }
   @keyframes tickerScroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) { .ticker .track { animation:none; } }
+  .grp { margin-top:12px; font-weight:600; color:var(--tealdark); font-size:.85rem; letter-spacing:.05em; }
+  label.chk { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:1rem; color:var(--text); }
+  .chk input { width:auto; margin:0; }
 </style>
 </head>
 <body>
@@ -59,8 +62,7 @@
     <label>Phone</label><input id="upPhone" type="tel">
     <label>Email</label><input id="upEmail" type="email" autocomplete="username">
     <label>Password (8+ characters)</label><input id="upPw" type="password" autocomplete="new-password">
-    <label>Section you need</label><select id="upSec" onchange="fillRoles()"></select>
-    <label>Your role</label><select id="upRole"></select>
+    <label>Your role(s): tick all that apply</label><div id="roleBox"></div>
     <input class="hp" id="upWeb" tabindex="-1" autocomplete="off">
     <button onclick="doUp()">Request access</button>
     <button class="ghost" onclick="show('vIn')">Back to sign in</button>
@@ -112,21 +114,36 @@
     $('title').textContent = inside ? 'LoveDriven Ministries' : 'Welcome to LoveDriven Ministries';
   }
 
-  call('getSections', [], function (s) {
-    SECS = s;
-    $('upSec').innerHTML = Object.keys(s).map(function (k) { return '<option>' + k + '</option>'; }).join('');
-    fillRoles();
-  }, function () {});
-
-  function fillRoles() {
-    $('upRole').innerHTML = (SECS[$('upSec').value] || []).map(function (r) { return '<option>' + r + '</option>'; }).join('');
+  // Default roles (always shown, even if the server is slow); replaced by the server's list when it loads
+  SECS = {
+    'Leadership': ['Director', 'Program Director'],
+    'After School': ['Camp Site Director', 'Team Leader', 'Camp Leader'],
+    'Street Leader': ['Street Leader Coordinator', 'Street Leader'],
+    'CCSS': ['Head Teacher', 'Deputy Head', 'Class Teacher', 'Teacher']
+  };
+  function picked() {
+    return Array.prototype.map.call(document.querySelectorAll('#roleBox input:checked'), function (x) { return x.value; });
   }
+  function drawRoles() {
+    var keep = picked(), box = $('roleBox'); box.innerHTML = '';
+    Object.keys(SECS).forEach(function (sec) {
+      var g = document.createElement('div'); g.className = 'grp'; g.textContent = sec; box.appendChild(g);
+      SECS[sec].forEach(function (r) {
+        var l = document.createElement('label'); l.className = 'chk';
+        var c = document.createElement('input'); c.type = 'checkbox'; c.value = r; c.checked = keep.indexOf(r) > -1;
+        l.appendChild(c); l.appendChild(document.createTextNode(r)); box.appendChild(l);
+      });
+    });
+  }
+  drawRoles();
+  call('getSections', [], function (s) { SECS = s; drawRoles(); }, function () {});
 
   function doUp() {
+    if (!picked().length) { $('upMsg').textContent = 'Tick at least one role.'; return; }
     $('upMsg').textContent = 'Sending...';
     call('signUp', [{
       name: $('upName').value, phone: $('upPhone').value, email: $('upEmail').value,
-      password: $('upPw').value, section: $('upSec').value, role: $('upRole').value, website: $('upWeb').value
+      password: $('upPw').value, roles: picked(), website: $('upWeb').value
     }], function () {
       $('upMsg').textContent = '';
       $('waitTitle').textContent = 'Request sent';
