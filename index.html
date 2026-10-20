@@ -41,6 +41,8 @@
   .grp { margin-top:12px; font-weight:600; color:var(--tealdark); font-size:.85rem; letter-spacing:.05em; }
   label.chk { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:1rem; color:var(--text); }
   .chk input { width:auto; margin:0; }
+  .tile.locked { opacity:.55; }
+  .tile:nth-child(4) { border-left-color:var(--tealdark); }
 </style>
 </head>
 <body>
@@ -116,10 +118,9 @@
 
   // Default roles (always shown, even if the server is slow); replaced by the server's list when it loads
   SECS = {
-    'Leadership': ['Director', 'Program Director'],
-    'After School': ['Camp Site Director', 'Team Leader', 'Camp Leader'],
-    'Street Leader': ['Street Leader Coordinator', 'Street Leader'],
-    'CCSS': ['Head Teacher', 'Deputy Head', 'Class Teacher', 'Teacher']
+    'Leadership': ['Director', 'Program Director', 'M and E', 'Financial and Administrator'],
+    'After School': ['Camp Site Director', 'Intern', 'Team Leader', 'Camp Leader'],
+    'CCSS': ['Head Teacher', 'Deputy Head', 'Teacher']
   };
   function picked() {
     return Array.prototype.map.call(document.querySelectorAll('#roleBox input:checked'), function (x) { return x.value; });
@@ -127,7 +128,7 @@
   function drawRoles() {
     var keep = picked(), box = $('roleBox'); box.innerHTML = '';
     Object.keys(SECS).forEach(function (sec) {
-      var g = document.createElement('div'); g.className = 'grp'; g.textContent = sec; box.appendChild(g);
+      var g = document.createElement('div'); g.className = 'grp'; g.textContent = ({ 'Leadership': 'Leadership & Administration (view all)', 'After School': 'After School Program (ASP)', 'Street Leader': 'Street Leader Program (SLP)', 'CCSS': 'CCSS' })[sec] || sec; box.appendChild(g);
       SECS[sec].forEach(function (r) {
         var l = document.createElement('label'); l.className = 'chk';
         var c = document.createElement('input'); c.type = 'checkbox'; c.value = r; c.checked = keep.indexOf(r) > -1;
@@ -168,16 +169,25 @@
       }
       token = r.token;
       $('who').textContent = r.name + ' \u00b7 ' + r.role;
-      var names = { 'CCSS': 'Chikondi Christian Secondary School (CCSS)', 'After School': 'After School Program', 'Street Leader': 'Street Leader Program' };
+      var ROOTS = ['After School', 'Street Leader', 'CCSS', 'Scholarship'];
+      var names = { 'After School': 'After School Program (ASP)', 'Street Leader': 'Street Leader Program (SLP)',
+                    'CCSS': 'Chikondi Christian Secondary School (CCSS)', 'Scholarship': 'Scholarship Fund' };
       $('tiles').innerHTML = '';
-      r.sections.forEach(function (s) {
+      ROOTS.forEach(function (s) {
+        var ok = r.sections.indexOf(s) > -1;
         var b = document.createElement('button');
-        b.className = 'tile'; b.textContent = names[s] || s;
-        b.onclick = function () { openSec(s, b.textContent); };
+        b.className = 'tile' + (ok ? '' : ' locked'); b.textContent = names[s];
+        b.onclick = function () { if (ok) openSec(s, names[s]); else noAccess(names[s]); };
         $('tiles').appendChild(b);
       });
       show('vHome');
     }, err('inMsg'));
+  }
+
+  function noAccess(title) {
+    $('secTitle').textContent = title; $('links').innerHTML = '';
+    $('secMsg').textContent = 'You do not have access to this section.';
+    show('vSec');
   }
 
   function openSec(s, title) {
