@@ -120,7 +120,7 @@
   SECS = {
     'Leadership': ['Director', 'Program Director', 'M and E', 'Financial and Administrator'],
     'After School': ['Camp Site Director', 'Intern', 'Team Leader', 'Camp Leader'],
-    'CCSS': ['Head Teacher', 'Deputy Head', 'Teacher']
+    'CCSS': ['Head Teacher', 'Deputy Head', 'Teacher', 'Class Teacher']
   };
   function picked() {
     return Array.prototype.map.call(document.querySelectorAll('#roleBox input:checked'), function (x) { return x.value; });
@@ -132,7 +132,7 @@
       SECS[sec].forEach(function (r) {
         var l = document.createElement('label'); l.className = 'chk';
         var c = document.createElement('input'); c.type = 'checkbox'; c.value = r; c.checked = keep.indexOf(r) > -1;
-        l.appendChild(c); l.appendChild(document.createTextNode(r)); box.appendChild(l);
+        l.appendChild(c); l.appendChild(document.createTextNode(r + (({ 'Class Teacher': ' (also counts as Teacher)', 'Team Leader': ' (also counts as Camp Leader)' })[r] || ''))); box.appendChild(l);
       });
     });
   }
