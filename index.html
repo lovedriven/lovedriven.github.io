@@ -51,6 +51,15 @@
   .ticker span { display:inline-block; padding:0 30px; font-size:.9rem; letter-spacing:.06em; } .ticker b { color:#7fe0cb; }
   @keyframes tickerScroll { from { transform:translateX(0); } to { transform:translateX(-50%); } }
   @media (prefers-reduced-motion: reduce) { .ticker .track { animation:none; } .tile { transition:none; } }
+  .crumb { color:var(--muted); font-size:.85rem; margin:2px 0 4px; }
+  .frow { display:flex; align-items:center; gap:12px; padding:12px 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; }
+  .frow > svg { color:var(--teal); flex:none; }
+  .frow a.n { flex:1; min-width:0; color:var(--text); text-decoration:none; word-break:break-word; }
+  .frow a.n small { display:block; color:var(--muted); }
+  .frow a.d { flex:none; width:38px; height:38px; display:grid; place-items:center; border-radius:11px; color:var(--tealdark); border:1px solid var(--line); }
+  .filein { width:100%; margin-top:12px; padding:12px; border:1px dashed var(--teal); border-radius:13px; background:var(--field); color:var(--text); font:inherit; }
+  .note { color:var(--muted); font-size:.88rem; margin:8px 2px 0; }
+  .badge { background:var(--coral); color:#fff; border-radius:999px; font-size:.78rem; padding:2px 9px; margin-left:8px; font-weight:600; }
 </style>
 </head>
 <body>
@@ -115,8 +124,23 @@
   <div class="hide" id="vSec">
     <b id="secTitle"></b>
     <div id="links"></div>
+    <div id="slp"></div>
     <div class="msg" id="secMsg"></div>
     <button class="ghost" onclick="show('vHome')">Back</button>
+  </div>
+
+  <div class="hide" id="vFolder">
+    <b id="foTitle"></b>
+    <div class="crumb" id="foCrumb"></div>
+    <div id="foList"></div>
+    <div class="card hide" id="foUp" style="margin-top:14px">
+      <b>Upload your work</b>
+      <p class="sub" style="text-align:left;margin:6px 0 0" id="foHint"></p>
+      <input type="file" id="foFile" class="filein" multiple>
+      <button class="btn" id="foBtn" onclick="doUpload()">Upload</button>
+    </div>
+    <div class="msg" id="foMsg"></div>
+    <button class="ghost" onclick="backFolder()">Back</button>
   </div>
 
   <div class="card hide" id="vIssue">
@@ -143,7 +167,8 @@
 <div class="ticker" aria-label="2026 to 2027 theme: Walk with me, Matthew 11:28-30"><div class="track"><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span></div></div>
 <script>
   var API = 'https://script.google.com/macros/s/AKfycbwywxqT9UkioBXPCTy54qz7tH3gIAhAuaL1MXGnyocOgZb9VmoDIqcMDwd-UjDg8DgI/exec';
-  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vIssue','vPw'];
+  var secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024;
+  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vIssue','vPw'];
   var IC = {
     mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
     lock:'<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -158,7 +183,11 @@
     sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     people:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14a5 5 0 0 1 5 5"/>',
     school:'<path d="M3 10l9-6 9 6"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/>',
-    cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5"/>'
+    cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5"/>',
+    folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
+    download:'<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',
+    shield:'<path d="M12 3l8 3v6c0 4.5-3.2 7.6-8 9-4.8-1.4-8-4.5-8-9V6z"/><path d="m8.5 12 2.5 2.5L16 9.5"/>'
   };
   function svg(n) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + IC[n] + '</svg>'; }
   function $(id) { return document.getElementById(id); }
@@ -183,7 +212,7 @@
 
   function show(v) {
     VIEWS.forEach(function (x) { $(x).classList.toggle('hide', x !== v); });
-    var inside = ['vHome','vSec','vIssue','vPw'].indexOf(v) > -1;
+    var inside = ['vHome','vSec','vFolder','vIssue','vPw'].indexOf(v) > -1;
     $('sub').classList.toggle('hide', inside);
     $('logoFull').classList.toggle('hide', inside); $('logoMini').classList.toggle('hide', !inside);
     $('title').textContent = inside ? 'LoveDriven Ministries' : 'Welcome to LoveDriven Ministries';
@@ -226,7 +255,7 @@
 
   var ROOTS = [
     { k: 'After School', n: 'After School Program (ASP)', d: 'Camps, attendance, results', i: 'sun', c: '#3aa991' },
-    { k: 'Street Leader', n: 'Street Leader Program (SLP)', d: 'Leader database', i: 'people', c: '#e8472b' },
+    { k: 'Street Leader', n: 'Street Leader Program (SLP)', d: 'Lessons, submissions, leader database', i: 'people', c: '#e8472b' },
     { k: 'CCSS', n: 'Chikondi Christian Secondary School', d: 'Classes, results, students', i: 'school', c: '#2f7fb5' },
     { k: 'Scholarship', n: 'Scholarship Fund', d: 'Funds and students', i: 'cap', c: '#8e6bbf' }
   ];
@@ -238,6 +267,14 @@
       if (r.status === 'Rejected') { $('waitTitle').textContent = 'Access not approved'; $('waitText').textContent = 'Please contact the ministry office.'; return show('vWait'); }
       token = r.token; $('who').textContent = r.name; $('role').textContent = r.role;
       $('tiles').innerHTML = '';
+      if (r.admin) {
+        var ab = document.createElement('button'); ab.className = 'tile'; ab.style.setProperty('--tc', '#e8472b');
+        ab.innerHTML = '<span class="ti">' + svg('shield') + '</span><span><b>Approve sign-ups</b><small></small></span><span class="go">' + svg('chev') + '</span>';
+        ab.querySelector('small').textContent = r.admin.pending ? r.admin.pending + ' waiting for approval' : 'No requests waiting';
+        if (r.admin.pending) { var bg = document.createElement('span'); bg.className = 'badge'; bg.textContent = r.admin.pending; ab.querySelector('b').appendChild(bg); }
+        ab.onclick = function () { window.open(r.admin.url, '_blank', 'noopener'); };
+        $('tiles').appendChild(ab);
+      }
       ROOTS.forEach(function (s) {
         var ok = r.sections.indexOf(s.k) > -1, b = document.createElement('button');
         b.className = 'tile' + (ok ? '' : ' locked'); b.style.setProperty('--tc', s.c);
@@ -251,14 +288,107 @@
   }
   function noAccess(t) { $('secTitle').textContent = t; $('links').innerHTML = ''; say('secMsg', 'You do not have access to this section.'); show('vSec'); }
   function openSec(s, t) {
-    $('secTitle').textContent = t; $('links').innerHTML = ''; say('secMsg', 'Loading...', true); show('vSec');
+    secKey = s; secName = t;
+    $('secTitle').textContent = t; $('links').innerHTML = ''; $('slp').innerHTML = ''; say('secMsg', 'Loading...', true); show('vSec');
+    if (s === 'Street Leader') loadSlp();
     call('getLinks', [token, s], function (list) {
-      say('secMsg', list.length ? '' : 'No sheets assigned to your role yet.', true);
+      say('secMsg', (list.length || s === 'Street Leader') ? '' : 'No sheets assigned to your role yet.', true);
       list.forEach(function (l) {
         var a = document.createElement('a'); a.className = 'link'; a.href = l.url; a.target = '_blank'; a.rel = 'noopener';
         a.innerHTML = svg('sheet'); a.appendChild(document.createTextNode(l.label)); $('links').appendChild(a);
       });
     }, err('secMsg'));
+  }
+
+  // ---------- Street Leader: Lessons (view/download) and Submission (upload) ----------
+  function fmtSize(n) { if (!n) return ''; if (n < 1024) return n + ' B'; if (n < 1048576) return Math.round(n / 1024) + ' KB'; return (n / 1048576).toFixed(1) + ' MB'; }
+  function folderBtn(name, sub, color, fn) {
+    var b = document.createElement('button'); b.className = 'tile'; b.style.setProperty('--tc', color);
+    b.innerHTML = '<span class="ti">' + svg('folder') + '</span><span><b></b><small></small></span><span class="go">' + svg('chev') + '</span>';
+    b.querySelector('b').textContent = name; b.querySelector('small').textContent = sub; b.onclick = fn; return b;
+  }
+  function fileRow(f) {
+    var d = document.createElement('div'); d.className = 'frow'; d.innerHTML = svg('file');
+    var a = document.createElement('a'); a.className = 'n'; a.href = f.view; a.target = '_blank'; a.rel = 'noopener';
+    a.appendChild(document.createTextNode(f.name));
+    if (f.size) { var sm = document.createElement('small'); sm.textContent = fmtSize(f.size); a.appendChild(sm); }
+    d.appendChild(a);
+    var dl = document.createElement('a'); dl.className = 'd'; dl.href = f.download; dl.target = '_blank'; dl.rel = 'noopener';
+    dl.setAttribute('aria-label', 'Download ' + f.name); dl.innerHTML = svg('download'); d.appendChild(dl);
+    return d;
+  }
+  function slpGroup(box, title, h, kind) {
+    var g = document.createElement('div'); g.className = 'grp'; g.textContent = title; box.appendChild(g);
+    if (!h) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'This folder is not set up yet.'; box.appendChild(n); return; }
+    h.folders.forEach(function (f) {
+      box.appendChild(folderBtn(f.name, kind === 'lesson' ? 'Open' : 'Upload here', kind === 'lesson' ? '#3aa991' : '#e8472b',
+        function () { nav = [{ kind: kind, id: h.id, name: title }]; openFolder(kind, f.id, f.name); }));
+    });
+    h.files.forEach(function (f) { box.appendChild(fileRow(f)); });
+    if (kind === 'submission' && h.canUpload) {
+      box.appendChild(folderBtn('Upload your work', 'Send files to the ministry team', '#e8472b',
+        function () { nav = [{ kind: kind, id: h.id, name: title }]; showFolder(h); }));
+    }
+    if (!h.folders.length && !h.files.length && kind === 'lesson') {
+      var e = document.createElement('div'); e.className = 'note'; e.textContent = 'No lessons yet.'; box.appendChild(e);
+    }
+  }
+  function loadSlp() {
+    call('slpHome', [token], function (h) {
+      var box = $('slp'); box.innerHTML = '';
+      slpGroup(box, 'Lessons', h.lesson, 'lesson');
+      slpGroup(box, 'Submissions', h.submission, 'submission');
+    }, function (e) { $('slp').innerHTML = ''; say('secMsg', e.message); });
+  }
+  function openFolder(kind, id, name) {
+    nav.push({ kind: kind, id: id, name: name });
+    loadFolder();
+  }
+  function loadFolder() {
+    var top = nav[nav.length - 1];
+    $('foTitle').textContent = top.name; $('foList').innerHTML = ''; $('foUp').classList.add('hide'); say('foMsg', 'Loading...', true);
+    $('foCrumb').textContent = nav.map(function (x) { return x.name; }).join('  /  ');
+    show('vFolder');
+    call('browse', [token, top.id], function (h) { showFolder(h); }, function (e) { say('foMsg', e.message); });
+  }
+  function showFolder(h) {
+    var top = nav[nav.length - 1];
+    $('foTitle').textContent = h.name || top.name; $('foList').innerHTML = '';
+    $('foCrumb').textContent = nav.map(function (x) { return x.name; }).join('  /  ');
+    h.folders.forEach(function (f) {
+      $('foList').appendChild(folderBtn(f.name, h.kind === 'lesson' ? 'Open' : 'Upload here', h.kind === 'lesson' ? '#3aa991' : '#e8472b',
+        function () { openFolder(h.kind, f.id, f.name); }));
+    });
+    h.files.forEach(function (f) { $('foList').appendChild(fileRow(f)); });
+    if (h.canUpload) {
+      $('foUp').classList.remove('hide'); $('foHint').textContent = 'Choose one or more files (up to 15 MB each). They go straight to the ministry team.';
+    } else $('foUp').classList.add('hide');
+    say('foMsg', (!h.folders.length && !h.files.length && h.kind === 'lesson') ? 'This folder is empty.' : '', true);
+    show('vFolder');
+  }
+  function backFolder() {
+    nav.pop();
+    if (nav.length <= 1) { nav = []; show('vSec'); loadSlp(); } else loadFolder();
+  }
+  function doUpload() {
+    var inp = $('foFile'), files = inp.files, top = nav[nav.length - 1], i = 0, done = 0, skipped = 0;
+    if (!files.length) return say('foMsg', 'Choose a file first.');
+    $('foBtn').disabled = true;
+    function finish(msg, good) { $('foBtn').disabled = false; inp.value = ''; say('foMsg', msg, good); }
+    (function next() {
+      if (i >= files.length) return finish(done + ' file(s) uploaded. Thank you!' + (skipped ? ' ' + skipped + ' skipped (too large).' : ''), done > 0);
+      var f = files[i++];
+      if (f.size > MAXUP) { skipped++; return next(); }
+      say('foMsg', 'Uploading ' + f.name + ' (' + i + ' of ' + files.length + ')...', true);
+      var rd = new FileReader();
+      rd.onerror = function () { finish('Could not read ' + f.name + '.'); };
+      rd.onload = function () {
+        var b64 = String(rd.result).split(',')[1] || '';
+        call('uploadFile', [token, top.id, f.name, f.type, b64], function () { done++; next(); },
+          function (e) { finish(f.name + ': ' + e.message); });
+      };
+      rd.readAsDataURL(f);
+    })();
   }
 
   function doCode() {
@@ -290,7 +420,7 @@
       $('pwOld').value = ''; $('pwNew').value = ''; say('pwMsg', 'Password changed.', true);
     }, err('pwMsg'));
   }
-  function out() { call('signOut', [token], function () {}, function () {}); token = ''; $('inPw').value = ''; show('vIn'); }
+  function out() { call('signOut', [token], function () {}, function () {}); token = ''; nav = []; $('inPw').value = ''; show('vIn'); }
 </script>
 </body>
 </html>
