@@ -59,6 +59,12 @@
   .frow a.d { flex:none; width:38px; height:38px; display:grid; place-items:center; border-radius:11px; color:var(--tealdark); border:1px solid var(--line); }
   .filein { width:100%; margin-top:12px; padding:12px; border:1px dashed var(--teal); border-radius:13px; background:var(--field); color:var(--text); font:inherit; }
   .note { color:var(--muted); font-size:.88rem; margin:8px 2px 0; }
+  .frow small.err { color:#a1301f; }
+  .chip { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.76rem; font-weight:600; background:#e6ecee; color:#40555e; }
+  .chip.s-Searching { background:#fff1d6; color:#8a5a00; } .chip.s-Found { background:#d9f2e8; color:#13694d; } .chip.s-Not { background:#fde1dd; color:#a1301f; }
+  .rq { padding:12px 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; }
+  .rq b { display:block; margin-bottom:2px; word-break:break-word; } .rq small { color:var(--muted); }
+  .rq p { margin:8px 0 0; font-size:.92rem; }
   .badge { background:var(--coral); color:#fff; border-radius:999px; font-size:.78rem; padding:2px 9px; margin-left:8px; font-weight:600; }
 </style>
 </head>
@@ -134,13 +140,30 @@
     <div class="crumb" id="foCrumb"></div>
     <div id="foList"></div>
     <div class="card hide" id="foUp" style="margin-top:14px">
-      <b>Upload your work</b>
+      <b id="foUpT">Upload your work</b>
       <p class="sub" style="text-align:left;margin:6px 0 0" id="foHint"></p>
       <input type="file" id="foFile" class="filein" multiple>
       <button class="btn" id="foBtn" onclick="doUpload()">Upload</button>
     </div>
     <div class="msg" id="foMsg"></div>
     <button class="ghost" onclick="backFolder()">Back</button>
+  </div>
+
+  <div class="hide" id="vRequest">
+    <b>Request a resource</b>
+    <p class="sub" style="text-align:left;margin:6px 0 0">Looking for a past paper, a book soft copy or notes? Tell us what you need.</p>
+    <div class="card" style="margin-top:12px">
+      <div class="fld"><select id="rqType" style="padding-left:14px"><option>Past paper</option><option>Book (soft copy)</option><option>Notes</option><option>Other</option></select></div>
+      <div class="fld"><input id="rqWhat" maxlength="150" style="text-align:left;padding:13px 14px" placeholder="What do you need? e.g. MSCE Maths 2023"></div>
+      <div class="fld"><select id="rqForm" style="padding-left:14px"><option value="">Which form? (optional)</option><option>Form 1</option><option>Form 2</option><option>Any form</option></select></div>
+      <div class="fld"><textarea id="rqDetails" style="padding-left:14px" maxlength="600" placeholder="Anything else that helps (optional)"></textarea></div>
+      <p class="note">We cannot guarantee that every resource will be found, but we will try as much as possible.</p>
+      <button class="btn" id="rqBtn" onclick="doRequest()">Send request</button>
+      <div class="msg" id="rqOut"></div>
+    </div>
+    <div class="grp">Your requests</div>
+    <div id="rqList"></div>
+    <button class="ghost" onclick="show('vSec')">Back</button>
   </div>
 
   <div class="card hide" id="vIssue">
@@ -168,7 +191,7 @@
 <script>
   var API = 'https://script.google.com/macros/s/AKfycbwywxqT9UkioBXPCTy54qz7tH3gIAhAuaL1MXGnyocOgZb9VmoDIqcMDwd-UjDg8DgI/exec';
   var secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024;
-  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vIssue','vPw'];
+  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vIssue','vPw'];
   var IC = {
     mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
     lock:'<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -184,6 +207,7 @@
     people:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14a5 5 0 0 1 5 5"/>',
     school:'<path d="M3 10l9-6 9 6"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/>',
     cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5"/>',
+    search:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/>',
     folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
     download:'<path d="M12 4v11"/><path d="m7 11 5 5 5-5"/><path d="M5 20h14"/>',
@@ -212,7 +236,7 @@
 
   function show(v) {
     VIEWS.forEach(function (x) { $(x).classList.toggle('hide', x !== v); });
-    var inside = ['vHome','vSec','vFolder','vIssue','vPw'].indexOf(v) > -1;
+    var inside = ['vHome','vSec','vFolder','vRequest','vIssue','vPw'].indexOf(v) > -1;
     $('sub').classList.toggle('hide', inside);
     $('logoFull').classList.toggle('hide', inside); $('logoMini').classList.toggle('hide', !inside);
     $('title').textContent = inside ? 'LoveDriven Ministries' : 'Welcome to LoveDriven Ministries';
@@ -291,30 +315,69 @@
     secKey = s; secName = t;
     $('secTitle').textContent = t; $('links').innerHTML = ''; $('slp').innerHTML = ''; say('secMsg', 'Loading...', true); show('vSec');
     if (s === 'Street Leader') loadSlp();
+    if (s === 'CCSS') ccssExtras();
     call('getLinks', [token, s], function (list) {
-      say('secMsg', (list.length || s === 'Street Leader') ? '' : 'No sheets assigned to your role yet.', true);
-      list.forEach(function (l) {
-        var a = document.createElement('a'); a.className = 'link'; a.href = l.url; a.target = '_blank'; a.rel = 'noopener';
-        a.innerHTML = svg('sheet'); a.appendChild(document.createTextNode(l.label)); $('links').appendChild(a);
+      say('secMsg', (list.length || s === 'Street Leader' || s === 'CCSS') ? '' : 'No sheets assigned to your role yet.', true);
+      var order = s === 'CCSS' ? ['Form 1', 'Form 2', 'Administration'] : [], groups = {}, names = [];
+      list.forEach(function (l) { var g = l.group || ''; if (!groups[g]) { groups[g] = []; names.push(g); } groups[g].push(l); });
+      function rank(g) { return g === '' ? -1 : (order.indexOf(g) > -1 ? order.indexOf(g) : 50); }
+      names.sort(function (a, b) { return rank(a) - rank(b) || (a < b ? -1 : 1); });
+      names.forEach(function (g) {
+        if (g) { var h = document.createElement('div'); h.className = 'grp'; h.textContent = g; $('links').appendChild(h); }
+        groups[g].forEach(function (l) {
+          var a = document.createElement('a'); a.className = 'link'; a.href = l.url; a.target = '_blank'; a.rel = 'noopener';
+          a.innerHTML = svg('sheet'); a.appendChild(document.createTextNode(l.label)); $('links').appendChild(a);
+        });
       });
     }, err('secMsg'));
   }
 
   // ---------- Street Leader: Lessons (view/download) and Submission (upload) ----------
   function fmtSize(n) { if (!n) return ''; if (n < 1024) return n + ' B'; if (n < 1048576) return Math.round(n / 1024) + ' KB'; return (n / 1048576).toFixed(1) + ' MB'; }
-  function folderBtn(name, sub, color, fn) {
+  function folderBtn(name, sub, color, fn, icon) {
     var b = document.createElement('button'); b.className = 'tile'; b.style.setProperty('--tc', color);
-    b.innerHTML = '<span class="ti">' + svg('folder') + '</span><span><b></b><small></small></span><span class="go">' + svg('chev') + '</span>';
+    b.innerHTML = '<span class="ti">' + svg(icon || 'folder') + '</span><span><b></b><small></small></span><span class="go">' + svg('chev') + '</span>';
     b.querySelector('b').textContent = name; b.querySelector('small').textContent = sub; b.onclick = fn; return b;
+  }
+  function b64blob(b64, mime) {
+    var bin = atob(b64), n = bin.length, u = new Uint8Array(n);
+    for (var i = 0; i < n; i++) u[i] = bin.charCodeAt(i);
+    return new Blob([u], { type: mime || 'application/octet-stream' });
+  }
+  function saveBlob(url, name) {
+    var a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+  // Files go through the portal, so the person only needs their portal login (no Google account on this device).
+  function fetchFile(f, row, done, wnd) {
+    var sm = row.querySelector('small'), old = sm.textContent; sm.className = ''; sm.textContent = 'Preparing...';
+    call('getFile', [token, f.id], function (r) {
+      sm.textContent = old;
+      if (r.tooBig) {                                   // very large file: Drive link instead (needs a Google account)
+        if (wnd) wnd.close();
+        sm.className = 'err'; sm.textContent = 'Too large to open here. Opening in Google Drive...';
+        window.open(f.view, '_blank', 'noopener'); return;
+      }
+      var blob = b64blob(r.data, r.mime); done(URL.createObjectURL(blob), r);
+    }, function (e) { if (wnd) wnd.close(); sm.className = 'err'; sm.textContent = e.message; });
   }
   function fileRow(f) {
     var d = document.createElement('div'); d.className = 'frow'; d.innerHTML = svg('file');
     var a = document.createElement('a'); a.className = 'n'; a.href = f.view; a.target = '_blank'; a.rel = 'noopener';
     a.appendChild(document.createTextNode(f.name));
-    if (f.size) { var sm = document.createElement('small'); sm.textContent = fmtSize(f.size); a.appendChild(sm); }
+    var sm = document.createElement('small'); sm.textContent = fmtSize(f.size); a.appendChild(sm);
+    a.onclick = function (ev) {                         // open (view) in a new tab, or save if the browser cannot show it
+      ev.preventDefault();
+      var wnd = window.open('', '_blank');              // opened now so pop-up blockers allow it
+      fetchFile(f, d, function (url, r) {
+        if (wnd && /^(application\/pdf|image\/|text\/)/.test(r.mime)) wnd.location = url;
+        else { if (wnd) wnd.close(); saveBlob(url, r.name || f.name); }
+      }, wnd);
+    };
     d.appendChild(a);
     var dl = document.createElement('a'); dl.className = 'd'; dl.href = f.download; dl.target = '_blank'; dl.rel = 'noopener';
-    dl.setAttribute('aria-label', 'Download ' + f.name); dl.innerHTML = svg('download'); d.appendChild(dl);
+    dl.setAttribute('aria-label', 'Download ' + f.name); dl.innerHTML = svg('download');
+    dl.onclick = function (ev) { ev.preventDefault(); fetchFile(f, d, function (url, r) { saveBlob(url, r.name || f.name); }, null); };
+    d.appendChild(dl);
     return d;
   }
   function slpGroup(box, title, h, kind) {
@@ -322,12 +385,12 @@
     if (!h) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'This folder is not set up yet.'; box.appendChild(n); return; }
     h.folders.forEach(function (f) {
       box.appendChild(folderBtn(f.name, kind === 'lesson' ? 'Open' : 'Upload here', kind === 'lesson' ? '#3aa991' : '#e8472b',
-        function () { nav = [{ kind: kind, id: h.id, name: title }]; openFolder(kind, f.id, f.name); }));
+        function () { nav = [{ kind: kind, id: h.id, name: title, home: true }]; openFolder(kind, f.id, f.name); }));
     });
     h.files.forEach(function (f) { box.appendChild(fileRow(f)); });
     if (kind === 'submission' && h.canUpload) {
       box.appendChild(folderBtn('Upload your work', 'Send files to the ministry team', '#e8472b',
-        function () { nav = [{ kind: kind, id: h.id, name: title }]; showFolder(h); }));
+        function () { nav = [{ kind: kind, id: h.id, name: title, home: true }]; showFolder(h); }));
     }
     if (!h.folders.length && !h.files.length && kind === 'lesson') {
       var e = document.createElement('div'); e.className = 'note'; e.textContent = 'No lessons yet.'; box.appendChild(e);
@@ -356,19 +419,24 @@
     $('foTitle').textContent = h.name || top.name; $('foList').innerHTML = '';
     $('foCrumb').textContent = nav.map(function (x) { return x.name; }).join('  /  ');
     h.folders.forEach(function (f) {
-      $('foList').appendChild(folderBtn(f.name, h.kind === 'lesson' ? 'Open' : 'Upload here', h.kind === 'lesson' ? '#3aa991' : '#e8472b',
+      $('foList').appendChild(folderBtn(f.name, h.kind === 'submission' ? 'Upload here' : 'Open', h.kind === 'submission' ? '#e8472b' : '#3aa991',
         function () { openFolder(h.kind, f.id, f.name); }));
     });
     h.files.forEach(function (f) { $('foList').appendChild(fileRow(f)); });
     if (h.canUpload) {
-      $('foUp').classList.remove('hide'); $('foHint').textContent = 'Choose one or more files (up to 15 MB each). They go straight to the ministry team.';
+      $('foUp').classList.remove('hide');
+      $('foUpT').textContent = h.kind === 'library' ? 'Add a file here' : 'Upload your work';
+      $('foHint').textContent = h.kind === 'library'
+        ? 'Add a past paper, book or notes for others to download (up to 15 MB each). Files cannot be deleted from here.'
+        : 'Choose one or more files (up to 15 MB each). They go straight to the ministry team.';
     } else $('foUp').classList.add('hide');
-    say('foMsg', (!h.folders.length && !h.files.length && h.kind === 'lesson') ? 'This folder is empty.' : '', true);
+    say('foMsg', (!h.folders.length && !h.files.length && h.kind !== 'submission') ? 'This folder is empty.' : '', true);
     show('vFolder');
   }
   function backFolder() {
     nav.pop();
-    if (nav.length <= 1) { nav = []; show('vSec'); loadSlp(); } else loadFolder();
+    if (!nav.length || nav[nav.length - 1].home) { nav = []; show('vSec'); if (secKey === 'Street Leader') loadSlp(); }
+    else loadFolder();
   }
   function doUpload() {
     var inp = $('foFile'), files = inp.files, top = nav[nav.length - 1], i = 0, done = 0, skipped = 0;
@@ -376,7 +444,14 @@
     $('foBtn').disabled = true;
     function finish(msg, good) { $('foBtn').disabled = false; inp.value = ''; say('foMsg', msg, good); }
     (function next() {
-      if (i >= files.length) return finish(done + ' file(s) uploaded. Thank you!' + (skipped ? ' ' + skipped + ' skipped (too large).' : ''), done > 0);
+      if (i >= files.length) {
+        var msg = done + ' file(s) uploaded. Thank you!' + (skipped ? ' ' + skipped + ' skipped (too large).' : '');
+        if (done > 0 && top.kind === 'library') {          // show the new file in the list
+          $('foBtn').disabled = false; inp.value = '';
+          return call('browse', [token, top.id], function (h) { showFolder(h); say('foMsg', msg, true); }, function () { say('foMsg', msg, true); });
+        }
+        return finish(msg, done > 0);
+      }
       var f = files[i++];
       if (f.size > MAXUP) { skipped++; return next(); }
       say('foMsg', 'Uploading ' + f.name + ' (' + i + ' of ' + files.length + ')...', true);
@@ -389,6 +464,45 @@
       };
       rd.readAsDataURL(f);
     })();
+  }
+
+  // ---------- CCSS Resources library + resource requests ----------
+  function ccssExtras() {
+    var box = $('slp'); box.innerHTML = '';
+    var g = document.createElement('div'); g.className = 'grp'; g.textContent = 'CCSS Resources'; box.appendChild(g);
+    box.appendChild(folderBtn('Browse resources', 'Past papers, books and more. Download or add files.', '#3aa991', openLibrary, 'folder'));
+    box.appendChild(folderBtn('Request a resource', 'Looking for a past paper or a book? Ask here.', '#e8472b', openRequest, 'search'));
+  }
+  function openLibrary() {
+    nav = [{ kind: 'library', id: '', name: 'CCSS Resources' }];
+    $('foTitle').textContent = 'CCSS Resources'; $('foCrumb').textContent = ''; $('foList').innerHTML = ''; $('foUp').classList.add('hide');
+    say('foMsg', 'Loading...', true); show('vFolder');
+    call('libHome', [token], function (h) { nav[0].id = h.id; showFolder(h); }, function (e) { say('foMsg', e.message); });
+  }
+  function openRequest() { say('rqOut', ''); show('vRequest'); loadMyRequests(); }
+  function doRequest() {
+    var what = $('rqWhat').value.trim();
+    if (what.length < 3) return say('rqOut', 'Please say what you are looking for.');
+    $('rqBtn').disabled = true; say('rqOut', 'Sending...', true);
+    call('submitRequest', [token, { type: $('rqType').value, what: what, form: $('rqForm').value, details: $('rqDetails').value }], function () {
+      $('rqBtn').disabled = false; $('rqWhat').value = ''; $('rqDetails').value = '';
+      say('rqOut', 'Request sent. We cannot promise to find every resource, but we will try as much as we can. Updates appear under "Your requests".', true);
+      loadMyRequests();
+    }, function (e) { $('rqBtn').disabled = false; say('rqOut', e.message); });
+  }
+  function loadMyRequests() {
+    call('myRequests', [token], function (list) {
+      var box = $('rqList'); box.innerHTML = '';
+      if (!list.length) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'No requests yet.'; box.appendChild(n); return; }
+      list.forEach(function (r) {
+        var d = document.createElement('div'); d.className = 'rq';
+        var b = document.createElement('b'); b.textContent = r.what; d.appendChild(b);
+        var sm = document.createElement('small'); sm.textContent = [r.type, r.form, r.date].filter(Boolean).join('  \u00b7  ') + '  '; d.appendChild(sm);
+        var c = document.createElement('span'); c.className = 'chip s-' + String(r.status).split(' ')[0]; c.textContent = r.status; d.appendChild(c);
+        if (r.reply) { var p = document.createElement('p'); p.textContent = r.reply; d.appendChild(p); }
+        box.appendChild(d);
+      });
+    }, function (e) { $('rqList').textContent = ''; say('rqOut', e.message); });
   }
 
   function doCode() {
