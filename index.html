@@ -60,6 +60,10 @@
   .filein { width:100%; margin-top:12px; padding:12px; border:1px dashed var(--teal); border-radius:13px; background:var(--field); color:var(--text); font:inherit; }
   .note { color:var(--muted); font-size:.88rem; margin:8px 2px 0; }
   .frow small.err { color:#a1301f; }
+  .rq p { white-space:pre-wrap; }
+  .rq .frow { margin-top:8px; }
+  .linkbtn { background:none; border:0; color:var(--coral); font:inherit; font-size:.85rem; padding:6px 0 0; cursor:pointer; text-decoration:underline; }
+  .picker { max-height:240px; overflow:auto; border:1px solid var(--line); border-radius:13px; padding:6px 12px; margin-top:8px; background:var(--field); }
   .chip { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.76rem; font-weight:600; background:#e6ecee; color:#40555e; }
   .chip.s-Searching { background:#fff1d6; color:#8a5a00; } .chip.s-Found { background:#d9f2e8; color:#13694d; } .chip.s-Not { background:#fde1dd; color:#a1301f; }
   .rq { padding:12px 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; }
@@ -120,6 +124,7 @@
   <div class="hide" id="vHome">
     <div class="hello"><div><div class="who" id="who"></div><div class="role" id="role"></div></div></div>
     <div id="tiles"></div>
+    <div id="annBox"></div>
     <div class="row2">
       <button class="mini-btn" onclick="openIssue()"><span data-i="msg"></span>Report an issue</button>
       <button class="mini-btn" onclick="openPw()"><span data-i="lock"></span>Change password</button>
@@ -143,6 +148,12 @@
       <b id="foUpT">Upload your work</b>
       <p class="sub" style="text-align:left;margin:6px 0 0" id="foHint"></p>
       <input type="file" id="foFile" class="filein" multiple>
+      <div id="foNotify" class="hide">
+        <div class="grp">Email these people about it</div>
+        <div id="foAud"></div>
+        <label class="chk"><input type="checkbox" id="foAttach" checked> Attach the file to the email</label>
+        <p class="note">Only files trigger an email. Adding a folder never does. Untick everyone to send no email.</p>
+      </div>
       <button class="btn" id="foBtn" onclick="doUpload()">Upload</button>
     </div>
     <div class="msg" id="foMsg"></div>
@@ -163,6 +174,49 @@
     </div>
     <div class="grp">Your requests</div>
     <div id="rqList"></div>
+    <button class="ghost" onclick="show('vSec')">Back</button>
+  </div>
+
+  <div class="hide" id="vMgmt">
+    <b>Management</b>
+    <div id="mgTiles" style="margin-top:12px"></div>
+    <button class="ghost" onclick="show('vHome')">Back</button>
+  </div>
+
+  <div class="hide" id="vBroadcast">
+    <b>Broadcast a message</b>
+    <p class="sub" style="text-align:left;margin:6px 0 0">Sends an email, with files if you like, to the groups you choose. They also see it on their home screen until you remove it.</p>
+    <div class="card" style="margin-top:12px">
+      <div class="fld"><input id="bcSubject" maxlength="120" style="text-align:left;padding:13px 14px" placeholder="Subject"></div>
+      <div class="fld"><textarea id="bcMsg" maxlength="4000" style="padding-left:14px" placeholder="Write your message..."></textarea></div>
+      <div class="grp">Send to</div>
+      <div id="bcAud"></div>
+      <div class="grp">Files (optional)</div>
+      <div id="bcPicked"></div>
+      <button class="ghost" onclick="openPicker()">Choose a file already in Operation</button>
+      <div id="bcPicker" class="picker hide"></div>
+      <input type="file" id="bcFile" class="filein" multiple onchange="bcUpload()">
+      <p class="note">Or add new files now (up to 5 files, 15 MB each, 18 MB in total).</p>
+      <button class="btn" id="bcBtn" onclick="doBroadcast()">Send broadcast</button>
+      <div class="msg" id="bcOut"></div>
+    </div>
+    <div class="grp">Past broadcasts</div>
+    <div id="bcList"></div>
+    <button class="ghost" onclick="show('vMgmt')">Back</button>
+  </div>
+
+  <div class="hide" id="vSecIssue">
+    <b>Report an issue</b>
+    <p class="sub" style="text-align:left;margin:6px 0 0" id="siSub"></p>
+    <div class="card" style="margin-top:12px">
+      <div class="fld hide" id="siToBox"><select id="siTo" style="padding-left:14px"></select></div>
+      <div class="fld"><input id="siSubject" maxlength="120" style="text-align:left;padding:13px 14px" placeholder="Short title"></div>
+      <div class="fld"><textarea id="siMsg" maxlength="1500" style="padding-left:14px" placeholder="What happened?"></textarea></div>
+      <input type="file" id="siFiles" class="filein" multiple>
+      <p class="note">Optional: up to 3 photos or documents, 5 MB each.</p>
+      <button class="btn" id="siBtn" onclick="doSecIssue()">Send</button>
+      <div class="msg" id="siOut"></div>
+    </div>
     <button class="ghost" onclick="show('vSec')">Back</button>
   </div>
 
@@ -190,8 +244,8 @@
 <div class="ticker" aria-label="2026 to 2027 theme: Walk with me, Matthew 11:28-30"><div class="track"><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span></div></div>
 <script>
   var API = 'https://script.google.com/macros/s/AKfycbwywxqT9UkioBXPCTy54qz7tH3gIAhAuaL1MXGnyocOgZb9VmoDIqcMDwd-UjDg8DgI/exec';
-  var secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024;
-  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vIssue','vPw'];
+  var secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024, AUD = null, mg = null, bcFiles = [], siSection = '';
+  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vIssue','vPw'];
   var IC = {
     mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
     lock:'<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -207,6 +261,8 @@
     people:'<circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14a5 5 0 0 1 5 5"/>',
     school:'<path d="M3 10l9-6 9 6"/><path d="M5 10v9h14v-9"/><path d="M10 19v-5h4v5"/>',
     cap:'<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5"/>',
+    trash:'<path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/>',
+    megaphone:'<path d="M3 11v2a1 1 0 0 0 1 1h3l6 4V6L7 10H4a1 1 0 0 0-1 1z"/><path d="M16 9a4 4 0 0 1 0 6"/>',
     search:'<circle cx="11" cy="11" r="6.5"/><path d="m16 16 5 5"/>',
     folder:'<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
     file:'<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4"/>',
@@ -236,7 +292,7 @@
 
   function show(v) {
     VIEWS.forEach(function (x) { $(x).classList.toggle('hide', x !== v); });
-    var inside = ['vHome','vSec','vFolder','vRequest','vIssue','vPw'].indexOf(v) > -1;
+    var inside = ['vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vIssue','vPw'].indexOf(v) > -1;
     $('sub').classList.toggle('hide', inside);
     $('logoFull').classList.toggle('hide', inside); $('logoMini').classList.toggle('hide', !inside);
     $('title').textContent = inside ? 'LoveDriven Ministries' : 'Welcome to LoveDriven Ministries';
@@ -299,6 +355,12 @@
         ab.onclick = function () { window.open(r.admin.url, '_blank', 'noopener'); };
         $('tiles').appendChild(ab);
       }
+      mg = r.mgmt || null;
+      if (mg) {
+        var mb = document.createElement('button'); mb.className = 'tile'; mb.style.setProperty('--tc', '#6b4fbb');
+        mb.innerHTML = '<span class="ti">' + svg('megaphone') + '</span><span><b>Management</b><small>Broadcast messages' + (mg.lessonsUrl ? ' and lessons' : '') + '</small></span><span class="go">' + svg('chev') + '</span>';
+        mb.onclick = openMgmt; $('tiles').appendChild(mb);
+      }
       ROOTS.forEach(function (s) {
         var ok = r.sections.indexOf(s.k) > -1, b = document.createElement('button');
         b.className = 'tile' + (ok ? '' : ' locked'); b.style.setProperty('--tc', s.c);
@@ -307,7 +369,7 @@
         b.onclick = function () { if (ok) openSec(s.k, s.n); else noAccess(s.n); };
         $('tiles').appendChild(b);
       });
-      show('vHome');
+      show('vHome'); loadAnnouncements();
     }, err('inMsg'));
   }
   function noAccess(t) { $('secTitle').textContent = t; $('links').innerHTML = ''; say('secMsg', 'You do not have access to this section.'); show('vSec'); }
@@ -316,6 +378,7 @@
     $('secTitle').textContent = t; $('links').innerHTML = ''; $('slp').innerHTML = ''; say('secMsg', 'Loading...', true); show('vSec');
     if (s === 'Street Leader') loadSlp();
     if (s === 'CCSS') ccssExtras();
+    if (s === 'After School') aspExtras();
     call('getLinks', [token, s], function (list) {
       say('secMsg', (list.length || s === 'Street Leader' || s === 'CCSS') ? '' : 'No sheets assigned to your role yet.', true);
       var order = s === 'CCSS' ? ['Form 1', 'Form 2', 'Administration'] : [], groups = {}, names = [];
@@ -350,19 +413,22 @@
   // Files go through the portal, so the person only needs their portal login (no Google account on this device).
   function fetchFile(f, row, done, wnd) {
     var sm = row.querySelector('small'), old = sm.textContent; sm.className = ''; sm.textContent = 'Preparing...';
-    call('getFile', [token, f.id], function (r) {
+    var api = f.bid ? 'getAttachment' : 'getFile', args = f.bid ? [token, f.bid, f.id] : [token, f.id];
+    call(api, args, function (r) {
       sm.textContent = old;
       if (r.tooBig) {                                   // very large file: Drive link instead (needs a Google account)
         if (wnd) wnd.close();
-        sm.className = 'err'; sm.textContent = 'Too large to open here. Opening in Google Drive...';
+        sm.className = 'err';
+        if (f.bid) { sm.textContent = 'Too large to open here.'; return; }
+        sm.textContent = 'Too large to open here. Opening in Google Drive...';
         window.open(f.view, '_blank', 'noopener'); return;
       }
       var blob = b64blob(r.data, r.mime); done(URL.createObjectURL(blob), r);
     }, function (e) { if (wnd) wnd.close(); sm.className = 'err'; sm.textContent = e.message; });
   }
-  function fileRow(f) {
+  function fileRow(f, onDel) {
     var d = document.createElement('div'); d.className = 'frow'; d.innerHTML = svg('file');
-    var a = document.createElement('a'); a.className = 'n'; a.href = f.view; a.target = '_blank'; a.rel = 'noopener';
+    var a = document.createElement('a'); a.className = 'n'; a.href = f.view || '#'; a.target = '_blank'; a.rel = 'noopener';
     a.appendChild(document.createTextNode(f.name));
     var sm = document.createElement('small'); sm.textContent = fmtSize(f.size); a.appendChild(sm);
     a.onclick = function (ev) {                         // open (view) in a new tab, or save if the browser cannot show it
@@ -374,10 +440,16 @@
       }, wnd);
     };
     d.appendChild(a);
-    var dl = document.createElement('a'); dl.className = 'd'; dl.href = f.download; dl.target = '_blank'; dl.rel = 'noopener';
+    var dl = document.createElement('a'); dl.className = 'd'; dl.href = f.download || '#'; dl.target = '_blank'; dl.rel = 'noopener';
     dl.setAttribute('aria-label', 'Download ' + f.name); dl.innerHTML = svg('download');
     dl.onclick = function (ev) { ev.preventDefault(); fetchFile(f, d, function (url, r) { saveBlob(url, r.name || f.name); }, null); };
     d.appendChild(dl);
+    if (onDel) {
+      var x = document.createElement('a'); x.className = 'd'; x.href = '#'; x.style.color = '#a1301f';
+      x.setAttribute('aria-label', 'Delete ' + f.name); x.innerHTML = svg('trash');
+      x.onclick = function (ev) { ev.preventDefault(); onDel(f, d); };
+      d.appendChild(x);
+    }
     return d;
   }
   function slpGroup(box, title, h, kind) {
@@ -401,6 +473,8 @@
       var box = $('slp'); box.innerHTML = '';
       slpGroup(box, 'Lessons', h.lesson, 'lesson');
       slpGroup(box, 'Submissions', h.submission, 'submission');
+      box.appendChild(grp('Report'));
+      box.appendChild(folderBtn('Report an issue', 'Send a problem, with photos or files, to a person you choose.', '#e8472b', function () { openSecIssue('Street Leader'); }, 'msg'));
     }, function (e) { $('slp').innerHTML = ''; say('secMsg', e.message); });
   }
   function openFolder(kind, id, name) {
@@ -415,21 +489,26 @@
     call('browse', [token, top.id], function (h) { showFolder(h); }, function (e) { say('foMsg', e.message); });
   }
   function showFolder(h) {
-    var top = nav[nav.length - 1];
+    var top = nav[nav.length - 1], op = h.kind === 'operation';
     $('foTitle').textContent = h.name || top.name; $('foList').innerHTML = '';
     $('foCrumb').textContent = nav.map(function (x) { return x.name; }).join('  /  ');
     h.folders.forEach(function (f) {
       $('foList').appendChild(folderBtn(f.name, h.kind === 'submission' ? 'Upload here' : 'Open', h.kind === 'submission' ? '#e8472b' : '#3aa991',
         function () { openFolder(h.kind, f.id, f.name); }));
     });
-    h.files.forEach(function (f) { $('foList').appendChild(fileRow(f)); });
+    h.files.forEach(function (f) { $('foList').appendChild(fileRow(f, op && h.canManage ? delOpFile : null)); });
     if (h.canUpload) {
       $('foUp').classList.remove('hide');
-      $('foUpT').textContent = h.kind === 'library' ? 'Add a file here' : 'Upload your work';
+      $('foUpT').textContent = h.kind === 'library' ? 'Add a file here' : (op ? 'Add files here' : 'Upload your work');
       $('foHint').textContent = h.kind === 'library'
         ? 'Add a past paper, book or notes for others to download (up to 15 MB each). Files cannot be deleted from here.'
-        : 'Choose one or more files (up to 15 MB each). They go straight to the ministry team.';
+        : (op ? 'Add a timetable or other school file (up to 15 MB each). You can also delete files here.'
+              : 'Choose one or more files (up to 15 MB each). They go straight to the ministry team.');
     } else $('foUp').classList.add('hide');
+    if (op && h.canManage) {
+      $('foNotify').classList.remove('hide');
+      loadAud(function () { if (!$('foAud').children.length) buildAud($('foAud'), ['sec:CCSS']); });
+    } else $('foNotify').classList.add('hide');
     say('foMsg', (!h.folders.length && !h.files.length && h.kind !== 'submission') ? 'This folder is empty.' : '', true);
     show('vFolder');
   }
@@ -439,19 +518,29 @@
     else loadFolder();
   }
   function doUpload() {
-    var inp = $('foFile'), files = inp.files, top = nav[nav.length - 1], i = 0, done = 0, skipped = 0;
+    var inp = $('foFile'), files = inp.files, top = nav[nav.length - 1], i = 0, done = 0, skipped = 0, ids = [];
     if (!files.length) return say('foMsg', 'Choose a file first.');
     $('foBtn').disabled = true;
     function finish(msg, good) { $('foBtn').disabled = false; inp.value = ''; say('foMsg', msg, good); }
-    (function next() {
-      if (i >= files.length) {
-        var msg = done + ' file(s) uploaded. Thank you!' + (skipped ? ' ' + skipped + ' skipped (too large).' : '');
-        if (done > 0 && top.kind === 'library') {          // show the new file in the list
-          $('foBtn').disabled = false; inp.value = '';
-          return call('browse', [token, top.id], function (h) { showFolder(h); say('foMsg', msg, true); }, function () { say('foMsg', msg, true); });
-        }
-        return finish(msg, done > 0);
+    function reload(msg) {
+      $('foBtn').disabled = false; inp.value = '';
+      call('browse', [token, top.id], function (h) { showFolder(h); say('foMsg', msg, true); }, function () { say('foMsg', msg, true); });
+    }
+    function allDone() {
+      var msg = done + ' file(s) uploaded. Thank you!' + (skipped ? ' ' + skipped + ' skipped (too large).' : '');
+      if (done > 0 && top.kind === 'operation') {
+        var auds = pickedAud($('foAud'));
+        if (!auds.length) return reload(msg + ' Nobody was emailed.');
+        say('foMsg', 'Sending the email...', true);
+        return call('operationNotify', [token, { action: 'added', folderId: top.id, fileIds: ids, audiences: auds, attach: $('foAttach').checked }],
+          function (r) { reload(msg + ' ' + (r.sent || 0) + ' people emailed.'); },
+          function (e) { reload(msg + ' The email failed: ' + e.message); });
       }
+      if (done > 0 && top.kind === 'library') return reload(msg);
+      return finish(msg, done > 0);
+    }
+    (function next() {
+      if (i >= files.length) return allDone();
       var f = files[i++];
       if (f.size > MAXUP) { skipped++; return next(); }
       say('foMsg', 'Uploading ' + f.name + ' (' + i + ' of ' + files.length + ')...', true);
@@ -459,17 +548,205 @@
       rd.onerror = function () { finish('Could not read ' + f.name + '.'); };
       rd.onload = function () {
         var b64 = String(rd.result).split(',')[1] || '';
-        call('uploadFile', [token, top.id, f.name, f.type, b64], function () { done++; next(); },
+        call('uploadFile', [token, top.id, f.name, f.type, b64], function (r) { done++; if (r && r.id) ids.push(r.id); next(); },
           function (e) { finish(f.name + ': ' + e.message); });
       };
       rd.readAsDataURL(f);
     })();
   }
+  function delOpFile(f, row) {
+    var top = nav[nav.length - 1];
+    if (!window.confirm('Delete "' + f.name + '"? It moves to the Drive bin, and the people ticked below are emailed.')) return;
+    var sm = row.querySelector('small'); sm.className = ''; sm.textContent = 'Deleting...';
+    call('deleteOperationFile', [token, f.id], function (r) {
+      var auds = pickedAud($('foAud'));
+      function reload(extra) { call('browse', [token, top.id], function (h) { showFolder(h); say('foMsg', 'Deleted "' + r.name + '". ' + extra, true); }); }
+      if (!auds.length) return reload('Nobody was emailed.');
+      call('operationNotify', [token, { action: 'removed', names: [r.name], folder: r.folder, audiences: auds }],
+        function (x) { reload((x.sent || 0) + ' people emailed.'); }, function (e) { reload('The email failed: ' + e.message); });
+    }, function (e) { sm.className = 'err'; sm.textContent = e.message; });
+  }
+
+  // ---------- groups of people (audience pickers) ----------
+  function loadAud(cb) {
+    if (AUD) return cb();
+    call('getAudiences', [token], function (l) { AUD = l; cb(); }, function () { AUD = []; cb(); });
+  }
+  function buildAud(box, defaults) {
+    box.innerHTML = '';
+    (AUD || []).forEach(function (a) {
+      var l = document.createElement('label'); l.className = 'chk';
+      var c = document.createElement('input'); c.type = 'checkbox'; c.value = a.id; c.checked = defaults.indexOf(a.id) > -1;
+      l.appendChild(c); l.appendChild(document.createTextNode(a.label + ' (' + a.n + ')')); box.appendChild(l);
+    });
+  }
+  function pickedAud(box) {
+    var out = [], cs = box.querySelectorAll('input');
+    for (var i = 0; i < cs.length; i++) if (cs[i].checked) out.push(cs[i].value);
+    return out;
+  }
+  function grp(t) { var g = document.createElement('div'); g.className = 'grp'; g.textContent = t; return g; }
+  function readAll(files, maxEach, maxTotal, cb) {
+    var out = [], total = 0, i = 0;
+    (function next() {
+      if (i >= files.length) return cb(null, out);
+      var f = files[i++]; total += f.size;
+      if (f.size > maxEach) return cb(new Error(f.name + ' is too large (' + Math.round(maxEach / 1048576) + ' MB each at most).'));
+      if (total > maxTotal) return cb(new Error('The files are too large in total.'));
+      var rd = new FileReader();
+      rd.onerror = function () { cb(new Error('Could not read ' + f.name + '.')); };
+      rd.onload = function () { out.push({ name: f.name, mime: f.type, b64: String(rd.result).split(',')[1] || '' }); next(); };
+      rd.readAsDataURL(f);
+    })();
+  }
+
+  // ---------- After School / Street Leader: report an issue with attachments ----------
+  function aspExtras() {
+    var box = $('slp'); box.innerHTML = ''; box.appendChild(grp('Report'));
+    box.appendChild(folderBtn('Report an issue', 'Goes straight to the M and E team. You can add photos or files.', '#e8472b', function () { openSecIssue('After School'); }, 'msg'));
+  }
+  function openSecIssue(section) {
+    siSection = section; $('siSubject').value = ''; $('siMsg').value = ''; $('siFiles').value = ''; say('siOut', '');
+    $('siSub').textContent = section === 'After School' ? 'This goes straight to the M and E team.' : 'Choose who should receive it.';
+    $('siToBox').classList.add('hide'); show('vSecIssue');
+    if (section === 'Street Leader') {
+      call('issueTargets', [token, section], function (t) {
+        var sel = $('siTo'); sel.innerHTML = '';
+        var o = document.createElement('option'); o.value = ''; o.textContent = 'Send to... (choose a person)'; sel.appendChild(o);
+        t.people.forEach(function (p) { var x = document.createElement('option'); x.value = p.id; x.textContent = p.name + ' (' + p.role + ')'; sel.appendChild(x); });
+        $('siToBox').classList.remove('hide');
+      }, err('siOut'));
+    }
+  }
+  function doSecIssue() {
+    var subject = $('siSubject').value.trim(), msg = $('siMsg').value.trim(), files = $('siFiles').files;
+    if (siSection === 'Street Leader' && !$('siTo').value) return say('siOut', 'Please choose who to send this to.');
+    if (subject.length < 3) return say('siOut', 'Please give the issue a short title.');
+    if (msg.length < 5) return say('siOut', 'Please describe what happened.');
+    if (files.length > 3) return say('siOut', 'Please attach 3 files at most.');
+    $('siBtn').disabled = true; say('siOut', 'Sending...', true);
+    readAll(files, 5 * 1024 * 1024, 12 * 1024 * 1024, function (e, list) {
+      if (e) { $('siBtn').disabled = false; return say('siOut', e.message); }
+      call('reportSectionIssue', [token, { section: siSection, to: $('siTo').value, subject: subject, message: msg, files: list }], function (r) {
+        $('siBtn').disabled = false; $('siSubject').value = ''; $('siMsg').value = ''; $('siFiles').value = '';
+        say('siOut', 'Sent to ' + r.to + '. Thank you.', true);
+      }, function (e2) { $('siBtn').disabled = false; say('siOut', e2.message); });
+    });
+  }
+
+  // ---------- Management: broadcasts, lessons ----------
+  function openMgmt() {
+    var b = $('mgTiles'); b.innerHTML = '';
+    if (mg.broadcast) b.appendChild(folderBtn('Broadcast a message', 'Email a group, with files. It also shows on their home screen.', '#e8472b', openBroadcast, 'megaphone'));
+    if (mg.lessonsUrl) b.appendChild(folderBtn('Manage lessons', 'Opens the lessons folder in Google Drive. Sign in with your Google account.', '#3aa991', function () { window.open(mg.lessonsUrl, '_blank', 'noopener'); }, 'folder'));
+    show('vMgmt');
+  }
+  function renderBcFiles() {
+    var b = $('bcPicked'); b.innerHTML = '';
+    if (!bcFiles.length) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'No files attached.'; b.appendChild(n); return; }
+    bcFiles.forEach(function (f, i) {
+      var d = document.createElement('div'); d.className = 'frow'; d.innerHTML = svg('file');
+      var t = document.createElement('span'); t.style.flex = '1'; t.textContent = f.name; d.appendChild(t);
+      var x = document.createElement('a'); x.className = 'd'; x.href = '#'; x.style.color = '#a1301f'; x.innerHTML = svg('trash');
+      x.setAttribute('aria-label', 'Remove ' + f.name);
+      x.onclick = function (ev) { ev.preventDefault(); bcFiles.splice(i, 1); renderBcFiles(); };
+      d.appendChild(x); b.appendChild(d);
+    });
+  }
+  function openBroadcast() {
+    $('bcSubject').value = ''; $('bcMsg').value = ''; $('bcFile').value = ''; bcFiles = []; renderBcFiles();
+    $('bcPicker').classList.add('hide'); say('bcOut', ''); show('vBroadcast');
+    loadAud(function () { buildAud($('bcAud'), []); }); loadBroadcasts();
+  }
+  function openPicker() {
+    var p = $('bcPicker'); p.classList.remove('hide'); p.textContent = 'Loading...';
+    call('listOperationFiles', [token], function (list) {
+      p.innerHTML = '';
+      if (!list.length) { p.textContent = 'There are no files in Operation yet.'; return; }
+      list.forEach(function (f) {
+        var l = document.createElement('label'); l.className = 'chk';
+        var c = document.createElement('input'); c.type = 'checkbox'; c.value = f.id;
+        c.checked = bcFiles.some(function (x) { return x.id === f.id; });
+        c.onchange = function () {
+          if (c.checked) { if (bcFiles.length >= 5) { c.checked = false; return say('bcOut', 'You can attach 5 files at most.'); } bcFiles.push({ id: f.id, name: f.name }); }
+          else bcFiles = bcFiles.filter(function (x) { return x.id !== f.id; });
+          renderBcFiles();
+        };
+        l.appendChild(c); l.appendChild(document.createTextNode((f.path ? f.path + ' / ' : '') + f.name + (f.size ? ' (' + fmtSize(f.size) + ')' : '')));
+        p.appendChild(l);
+      });
+    }, function (e) { p.textContent = e.message; });
+  }
+  function bcUpload() {
+    var files = $('bcFile').files, i = 0;
+    if (!files.length) return;
+    (function next() {
+      if (i >= files.length) { $('bcFile').value = ''; return say('bcOut', 'Files added.', true); }
+      var f = files[i++];
+      if (bcFiles.length >= 5) { say('bcOut', 'You can attach 5 files at most.'); $('bcFile').value = ''; return; }
+      if (f.size > MAXUP) { say('bcOut', f.name + ' is too large (15 MB at most).'); return next(); }
+      say('bcOut', 'Uploading ' + f.name + '...', true);
+      var rd = new FileReader();
+      rd.onerror = function () { say('bcOut', 'Could not read ' + f.name + '.'); };
+      rd.onload = function () {
+        call('uploadBroadcastFile', [token, f.name, f.type, String(rd.result).split(',')[1] || ''], function (r) {
+          bcFiles.push({ id: r.id, name: r.name }); renderBcFiles(); next();
+        }, function (e) { say('bcOut', f.name + ': ' + e.message); });
+      };
+      rd.readAsDataURL(f);
+    })();
+  }
+  function doBroadcast() {
+    var subject = $('bcSubject').value.trim(), message = $('bcMsg').value.trim(), auds = pickedAud($('bcAud'));
+    if (subject.length < 3) return say('bcOut', 'Please write a subject.');
+    if (message.length < 3) return say('bcOut', 'Please write the message.');
+    if (!auds.length) return say('bcOut', 'Choose who should receive it.');
+    $('bcBtn').disabled = true; say('bcOut', 'Sending...', true);
+    call('sendBroadcast', [token, { subject: subject, message: message, audiences: auds, fileIds: bcFiles.map(function (f) { return f.id; }) }], function (r) {
+      $('bcBtn').disabled = false; $('bcSubject').value = ''; $('bcMsg').value = ''; bcFiles = []; renderBcFiles(); $('bcPicker').classList.add('hide');
+      say('bcOut', 'Sent to ' + r.recipients + ' people.', true); loadBroadcasts(); loadAnnouncements();
+    }, function (e) { $('bcBtn').disabled = false; say('bcOut', e.message); });
+  }
+  function loadBroadcasts() {
+    call('listBroadcasts', [token], function (list) {
+      var box = $('bcList'); box.innerHTML = '';
+      if (!list.length) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'No broadcasts yet.'; box.appendChild(n); return; }
+      list.forEach(function (b) {
+        var d = document.createElement('div'); d.className = 'rq';
+        var t = document.createElement('b'); t.textContent = b.subject; d.appendChild(t);
+        var sm = document.createElement('small');
+        sm.textContent = [b.date, b.from, b.audience + ' (' + b.recipients + ' people)'].join('  \u00b7  ') + (b.files ? '  \u00b7  ' + b.files : ''); d.appendChild(sm);
+        var rm = document.createElement('button'); rm.className = 'linkbtn'; rm.type = 'button'; rm.textContent = 'Remove from home screens';
+        rm.onclick = function () {
+          if (!window.confirm('Remove "' + b.subject + '"? It disappears from home screens. Emails already sent cannot be taken back.')) return;
+          call('removeBroadcast', [token, b.id], function () { loadBroadcasts(); loadAnnouncements(); }, function (e) { say('bcOut', e.message); });
+        };
+        d.appendChild(rm); box.appendChild(d);
+      });
+    }, function (e) { $('bcList').textContent = ''; say('bcOut', e.message); });
+  }
+  function loadAnnouncements() {
+    call('announcements', [token], function (list) {
+      var box = $('annBox'); box.innerHTML = '';
+      if (!list.length) return;
+      box.appendChild(grp('Announcements'));
+      list.forEach(function (a) {
+        var d = document.createElement('div'); d.className = 'rq';
+        var t = document.createElement('b'); t.textContent = a.subject; d.appendChild(t);
+        var sm = document.createElement('small'); sm.textContent = a.from + '  \u00b7  ' + a.date; d.appendChild(sm);
+        var p = document.createElement('p'); p.textContent = a.message; d.appendChild(p);
+        a.files.forEach(function (f) { d.appendChild(fileRow({ id: f.id, name: f.name, size: 0, bid: a.id })); });
+        box.appendChild(d);
+      });
+    }, function () { $('annBox').innerHTML = ''; });
+  }
 
   // ---------- CCSS Resources library + resource requests ----------
   function ccssExtras() {
     var box = $('slp'); box.innerHTML = '';
-    var g = document.createElement('div'); g.className = 'grp'; g.textContent = 'CCSS Resources'; box.appendChild(g);
+    box.appendChild(grp('Operation'));
+    box.appendChild(folderBtn('Operation', 'Timetable and school notices', '#3aa991', openOperation, 'folder'));
+    box.appendChild(grp('CCSS Resources'));
     box.appendChild(folderBtn('Browse resources', 'Past papers, books and more. Download or add files.', '#3aa991', openLibrary, 'folder'));
     box.appendChild(folderBtn('Request a resource', 'Looking for a past paper or a book? Ask here.', '#e8472b', openRequest, 'search'));
   }
@@ -478,6 +755,13 @@
     $('foTitle').textContent = 'CCSS Resources'; $('foCrumb').textContent = ''; $('foList').innerHTML = ''; $('foUp').classList.add('hide');
     say('foMsg', 'Loading...', true); show('vFolder');
     call('libHome', [token], function (h) { nav[0].id = h.id; showFolder(h); }, function (e) { say('foMsg', e.message); });
+  }
+  function openOperation() {
+    nav = [{ kind: 'operation', id: '', name: 'Operation' }];
+    $('foAud').innerHTML = '';
+    $('foTitle').textContent = 'Operation'; $('foCrumb').textContent = ''; $('foList').innerHTML = ''; $('foUp').classList.add('hide');
+    say('foMsg', 'Loading...', true); show('vFolder');
+    call('opHome', [token], function (h) { nav[0].id = h.id; showFolder(h); }, function (e) { say('foMsg', e.message); });
   }
   function openRequest() { say('rqOut', ''); show('vRequest'); loadMyRequests(); }
   function doRequest() {
@@ -534,7 +818,7 @@
       $('pwOld').value = ''; $('pwNew').value = ''; say('pwMsg', 'Password changed.', true);
     }, err('pwMsg'));
   }
-  function out() { call('signOut', [token], function () {}, function () {}); token = ''; nav = []; $('inPw').value = ''; show('vIn'); }
+  function out() { call('signOut', [token], function () {}, function () {}); token = ''; nav = []; AUD = null; mg = null; $('annBox').innerHTML = ''; $('inPw').value = ''; show('vIn'); }
 </script>
 </body>
 </html>
