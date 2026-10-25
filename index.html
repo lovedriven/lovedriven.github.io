@@ -95,6 +95,30 @@
     .wide #tiles, .wide #links, .wide #slp, .wide #foList, .wide #mgTiles { grid-template-columns:repeat(3,minmax(0,1fr)); }
   }
   @media (hover:none) { .tile:hover { transform:none; } }
+  /* ---- sign-in, sign-up and reset screens adapt too (tablet, PC, phone held sideways) ---- */
+  @media (min-width:720px) {
+    .wrap:not(.wide) { max-width:540px; padding-top:44px; }
+    .wrap:not(.wide) .brand img.full { width:250px; }
+    .wrap:not(.wide) h1 { font-size:1.6rem; }
+    .wrap:not(.wide) > .card { padding:28px 26px; }
+  }
+  @media (min-width:1000px), (min-width:640px) and (max-height:540px) and (orientation:landscape) {
+    .wrap:not(.wide) { max-width:1060px; display:grid; grid-template-columns:minmax(0,1fr) minmax(0,460px); column-gap:64px;
+      align-content:center; min-height:calc(100vh - 56px); padding-top:28px; padding-bottom:70px; }
+    .wrap:not(.wide) > .brand { grid-column:1; grid-row:1; text-align:left; align-self:end; }
+    .wrap:not(.wide) > .brand img.full { width:300px; max-width:100%; }
+    .wrap:not(.wide) > h1 { grid-column:1; grid-row:2; text-align:left; font-size:2.1rem; line-height:1.12; margin-top:18px; }
+    .wrap:not(.wide) > .sub { grid-column:1; grid-row:3; text-align:left; font-size:1.05rem; align-self:start; }
+    .wrap:not(.wide) > .card { grid-column:2; grid-row:1 / span 3; align-self:center; }
+    .wrap:not(.wide) > .tag { grid-column:1 / -1; text-align:center; }
+  }
+  @media (min-width:640px) and (max-height:540px) and (orientation:landscape) {
+    .wrap:not(.wide) { column-gap:36px; padding-top:12px; padding-bottom:56px; min-height:0; }
+    .wrap:not(.wide) > .brand img.full { width:150px; }
+    .wrap:not(.wide) > h1 { font-size:1.3rem; margin-top:8px; }
+    .wrap:not(.wide) > .card { padding:16px 18px; }
+  }
+  @media (min-width:1700px) { html { font-size:18px; } .wrap.wide { max-width:1240px; } }
 </style>
 </head>
 <body>
