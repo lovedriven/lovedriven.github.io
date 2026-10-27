@@ -69,6 +69,19 @@
   .fwrap .linkbtn { display:block; margin:2px 0 4px 6px; }
   .psearch { width:100%; padding:11px 14px; border:1px solid var(--line); border-radius:13px; background:var(--field); color:var(--text); font:inherit; margin-top:8px; }
   .chip.score { background:#d9f2e8; color:#13694d; }
+  .tabs { display:flex; gap:8px; margin:12px 0 4px; }
+  .tabs .ghost { flex:1; }
+  .tabs .ghost.on { background:var(--teal); color:#fff; border-color:var(--teal); }
+  .srow { display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; padding:12px 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; }
+  .srow .dt { flex:none; min-width:78px; font-weight:700; color:var(--tealdark); }
+  .srow .who { flex:1 1 130px; min-width:0; word-break:break-word; }
+  .srow .badges { display:flex; gap:6px; flex:none; }
+  .srow .who small { display:block; color:var(--muted); }
+  .srow.mine { border-color:var(--teal); background:rgba(58,169,145,.10); }
+  .srow.hol { opacity:.6; }
+  .chip.today { background:#d9f2e8; color:#13694d; } .chip.tom { background:#fff1d6; color:#8a5a00; } .chip.you { background:#e6e0f7; color:#4b3a8a; }
+  .nextbox { margin-top:10px; padding:12px 14px; border-left:5px solid var(--teal); background:var(--card); border-radius:10px; }
+  @media (min-width:720px) { .wide #schList { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:14px; align-items:start; } .wide #schList .grp { grid-column:1 / -1; } }
   .chip { display:inline-block; padding:2px 10px; border-radius:999px; font-size:.76rem; font-weight:600; background:#e6ecee; color:#40555e; }
   .chip.s-Searching { background:#fff1d6; color:#8a5a00; } .chip.s-Found { background:#d9f2e8; color:#13694d; } .chip.s-Not { background:#fde1dd; color:#a1301f; }
   .rq { padding:12px 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; }
@@ -226,6 +239,19 @@
     <button class="ghost" onclick="show('vSec')">Back</button>
   </div>
 
+  <div class="hide" id="vSched">
+    <b>Huddles &amp; morning devotions</b>
+    <p class="sub" style="text-align:left;margin:6px 0 0" id="schSub">Who leads each day. The person on duty gets an email at 6 PM the evening before and at 6 AM on the day.</p>
+    <div class="tabs">
+      <button class="ghost on" id="tabHud" onclick="schTab('h')">Huddles</button>
+      <button class="ghost" id="tabDev" onclick="schTab('d')">Morning devotions</button>
+    </div>
+    <div id="schNext"></div>
+    <div id="schList"></div>
+    <div class="msg" id="schMsg"></div>
+    <button class="ghost" onclick="show('vSec')">Back</button>
+  </div>
+
   <div class="hide" id="vFeedback">
     <b>Give feedback</b>
     <p class="sub" style="text-align:left;margin:6px 0 0" id="fbWho"></p>
@@ -312,8 +338,8 @@
 <div class="ticker" aria-label="2026 to 2027 theme: Walk with me, Matthew 11:28-30"><div class="track"><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span><span><b>WALK WITH ME</b> &nbsp;&middot;&nbsp; Matthew 11:28&ndash;30 &nbsp;&middot;&nbsp; 2026&ndash;2027 Theme</span></div></div>
 <script>
   var API = 'https://script.google.com/macros/s/AKfycbwywxqT9UkioBXPCTy54qz7tH3gIAhAuaL1MXGnyocOgZb9VmoDIqcMDwd-UjDg8DgI/exec';
-  var secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024, AUD = {}, mg = null, bcFiles = [], siSection = '', bcScope = 'all', curView = '', fbFile = null, fbReturn = 'vSec';
-  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vIssue','vPw'];
+  var SCH = null, schKind = 'h', secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024, AUD = {}, mg = null, bcFiles = [], siSection = '', bcScope = 'all', curView = '', fbFile = null, fbReturn = 'vSec';
+  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vSched','vIssue','vPw'];
   var IC = {
     mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
     lock:'<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -360,7 +386,7 @@
 
   function show(v) {
     VIEWS.forEach(function (x) { $(x).classList.toggle('hide', x !== v); });
-    var inside = ['vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vIssue','vPw'].indexOf(v) > -1;
+    var inside = ['vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vSched','vIssue','vPw'].indexOf(v) > -1;
     curView = v;
     $('sub').classList.toggle('hide', inside);
     $('logoFull').classList.toggle('hide', inside); $('logoMini').classList.toggle('hide', !inside);
@@ -782,9 +808,48 @@
     }, function (e) { box.textContent = ''; say('secMsg', e.message); show('vSec'); });
   }
 
+  // ---------- After School: huddle schedule and morning devotions ----------
+  function openSchedule() {
+    SCH = null; schKind = 'h'; $('schList').textContent = 'Loading...'; $('schNext').innerHTML = ''; say('schMsg', ''); show('vSched'); schTabs();
+    call('getSchedule', [token], function (d) { SCH = d; renderSchedule(); }, function (e) { $('schList').textContent = ''; say('schMsg', e.message); });
+  }
+  function schTab(k) { schKind = k; schTabs(); if (SCH) renderSchedule(); }
+  function schTabs() { $('tabHud').classList.toggle('on', schKind === 'h'); $('tabDev').classList.toggle('on', schKind === 'd'); }
+  function renderSchedule() {
+    var list = schKind === 'h' ? SCH.huddles : SCH.devotions, box = $('schList'); box.innerHTML = ''; $('schNext').innerHTML = '';
+    if (!list.length) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'Nothing is scheduled yet.'; box.appendChild(n); return; }
+    var mine = list.filter(function (e) { return e.mine; })[0];
+    var nb = document.createElement('div'); nb.className = 'nextbox';
+    nb.textContent = mine ? 'Your next ' + (schKind === 'h' ? 'huddle' : 'morning devotion') + ': ' + mine.label + (mine.when ? ' (' + mine.when.toLowerCase() + ')' : '') + '.'
+                          : 'You are not on the ' + (schKind === 'h' ? 'huddle' : 'morning devotion') + ' list for the coming weeks.';
+    $('schNext').appendChild(nb);
+    var objs = list.filter(function (e) { return e.objective; }).map(function (e) { return e.objective; });
+    var same = objs.length && objs.every(function (o) { return o === objs[0]; });
+    if (same) { var ob = document.createElement('div'); ob.className = 'note'; ob.textContent = 'Objective: ' + objs[0]; $('schNext').appendChild(ob); }
+    var month = '';
+    list.forEach(function (e) {
+      if (e.month !== month) { month = e.month; box.appendChild(grp(month)); }
+      var r = document.createElement('div'); r.className = 'srow' + (e.mine ? ' mine' : '') + (e.holiday ? ' hol' : '');
+      var d = document.createElement('div'); d.className = 'dt'; d.textContent = e.label; r.appendChild(d);
+      var w = document.createElement('div'); w.className = 'who'; w.appendChild(document.createTextNode(e.name));
+      if (e.objective && !same) { var sm = document.createElement('small'); sm.textContent = e.objective; w.appendChild(sm); }
+      r.appendChild(w);
+      if (e.when || e.mine) {
+        var bd = document.createElement('div'); bd.className = 'badges';
+        if (e.when) { var c = document.createElement('span'); c.className = 'chip ' + (e.when === 'Today' ? 'today' : 'tom'); c.textContent = e.when; bd.appendChild(c); }
+        if (e.mine) { var y = document.createElement('span'); y.className = 'chip you'; y.textContent = 'You'; bd.appendChild(y); }
+        r.appendChild(bd);
+      }
+      box.appendChild(r);
+    });
+  }
+
   // ---------- After School / Street Leader: report an issue with attachments ----------
   function aspExtras() {
-    var box = $('slp'); box.innerHTML = ''; box.appendChild(grp('Report'));
+    var box = $('slp'); box.innerHTML = '';
+    box.appendChild(grp('Schedules'));
+    box.appendChild(folderBtn('Huddles & morning devotions', 'Who leads each day. You get an email reminder when it is your turn.', '#3aa991', openSchedule, 'cap'));
+    box.appendChild(grp('Report'));
     box.appendChild(folderBtn('Report an issue', 'Goes straight to the M and E team. You can add photos or files.', '#e8472b', function () { openSecIssue('After School'); }, 'msg'));
   }
   function openSecIssue(section) {
