@@ -95,5 +95,21 @@
       "type": "image/png",
       "purpose": "monochrome"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/mobile-signin.png",
+      "sizes": "824x1784",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Sign in to the LoveDriven portal"
+    },
+    {
+      "src": "/screenshots/wide-signin.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "LoveDriven portal on a tablet or computer"
+    }
   ]
 }
