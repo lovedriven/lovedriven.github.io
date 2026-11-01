@@ -36,6 +36,13 @@
     background:linear-gradient(135deg,var(--b1),var(--b2)); box-shadow:0 8px 18px rgba(18,48,63,.22); }
   button.btn:active { transform:translateY(1px); }
   button.ghost { width:100%; background:none; border:0; color:var(--tealdark); font:inherit; padding:11px; margin-top:4px; cursor:pointer; }
+  .apk { display:none; margin-top:16px; padding:14px; border:1px dashed var(--teal); border-radius:16px; background:var(--field); text-align:center; }
+  .apk.on { display:block; }
+  .apk b { display:block; margin-bottom:4px; }
+  .apk p { margin:0 0 10px; font-size:.85rem; color:var(--muted); line-height:1.4; }
+  .apk a.get { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:13px; color:#fff; text-decoration:none; font-weight:600; background:linear-gradient(135deg,var(--b1),var(--b2)); }
+  .apk a.get svg { stroke:#fff; }
+  .apk small { display:block; margin-top:8px; color:var(--muted); font-size:.75rem; line-height:1.35; }
   .msg { margin-top:12px; font-size:.9rem; color:var(--coral); min-height:1.2em; text-align:center; } .msg.ok { color:var(--tealdark); }
   .hello { display:flex; align-items:center; gap:12px; margin:4px 2px 16px; }
   .hello .who { font-weight:600; } .hello .role { color:var(--muted); font-size:.85rem; }
@@ -154,6 +161,12 @@
     <button class="ghost" onclick="show('vForgot')">Forgot password?</button>
     <button class="ghost" onclick="show('vUp')">New here? Create an account</button>
     <div class="msg" id="inMsg"></div>
+    <div class="apk" id="apkBox">
+      <b>Android phone? Get the app</b>
+      <p>Install the LDM Portal app for quicker, full-screen access to the portal.</p>
+      <a class="get" href="https://drive.google.com/uc?export=download&amp;id=1b2qZpm7JJUZEJ9thHVjA4KSoFYbu1F-b" target="_blank" rel="noopener"><span data-i="download"></span>Download LDM Portal.apk</a>
+      <small>After it downloads, open the file and tap Install. If your phone asks, allow &ldquo;Install unknown apps&rdquo; for your browser. If you have an older LoveDriven app, uninstall it first.</small>
+    </div>
   </div>
 
   <div class="card hide" id="vUp">
@@ -1079,6 +1092,14 @@
     }, err('pwMsg'));
   }
   function out() { call('signOut', [token], function () {}, function () {}); token = ''; nav = []; AUD = {}; mg = null; $('annBox').innerHTML = ''; $('inPw').value = ''; show('vIn'); }
+</script>
+<script>
+(function () {
+  var android = /Android/i.test(navigator.userAgent);
+  var inApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || /^android-app:/.test(document.referrer) || navigator.standalone;
+  var box = document.getElementById('apkBox');
+  if (box && android && !inApp) box.classList.add('on');
+})();
 </script>
 <script>
 if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }
