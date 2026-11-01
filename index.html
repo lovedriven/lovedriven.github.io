@@ -1095,10 +1095,9 @@
 </script>
 <script>
 (function () {
-  var android = /Android/i.test(navigator.userAgent);
   var inApp = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || /^android-app:/.test(document.referrer) || navigator.standalone;
   var box = document.getElementById('apkBox');
-  if (box && android && !inApp) box.classList.add('on');
+  if (box && !inApp) box.classList.add('on');   // shown on every device; hidden only inside the installed app
 })();
 </script>
 <script>
