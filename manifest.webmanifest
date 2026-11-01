@@ -9,7 +9,7 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#eef6f3",
+  "background_color": "#ffffff",
   "theme_color": "#12303f",
   "categories": [
     "education",

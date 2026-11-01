@@ -1,6 +1,6 @@
 // LoveDriven portal service worker
 // Caches the app shell only. All Google Apps Script calls (login, files, data) always go to the network.
-const CACHE = 'lovedriven-shell-v1';
+const CACHE = 'lovedriven-shell-v2';
 const SHELL = ['/', '/index.html', '/offline.html', '/logo.png', '/manifest.webmanifest', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', e => {
