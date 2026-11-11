@@ -43,6 +43,12 @@
   .apk a.get { display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-radius:13px; color:#fff; text-decoration:none; font-weight:600; background:linear-gradient(135deg,var(--b1),var(--b2)); }
   .apk a.get svg { stroke:#fff; }
   .apk small { display:block; margin-top:8px; color:var(--muted); font-size:.75rem; line-height:1.35; }
+  .rp { padding:12px 14px; margin-top:10px; background:var(--card); border:1px solid var(--line); border-radius:14px; }
+  .rp b { display:block; word-break:break-word; } .rp small { color:var(--muted); display:block; margin-top:2px; }
+  .rp .chip { margin-top:6px; } .rp p { margin:6px 0 0; font-size:.88rem; white-space:pre-wrap; }
+  .rp a { color:var(--tealdark); font-weight:600; font-size:.85rem; text-decoration:none; }
+  .chip.ok { background:#d9f2e8; color:#13694d; } .chip.wait { background:#fff1d6; color:#8a5a00; } .chip.bad { background:#fde1dd; color:#a1301f; }
+  .rpfiles { font-size:.85rem; color:var(--muted); margin:-4px 0 10px; word-break:break-word; }
   .msg { margin-top:12px; font-size:.9rem; color:var(--coral); min-height:1.2em; text-align:center; } .msg.ok { color:var(--tealdark); }
   .hello { display:flex; align-items:center; gap:12px; margin:4px 2px 16px; }
   .hello .who { font-weight:600; } .hello .role { color:var(--muted); font-size:.85rem; }
@@ -339,6 +345,26 @@
     <button class="ghost" onclick="show('vSec')">Back</button>
   </div>
 
+  <div class="hide" id="vReports">
+    <b>Monthly reports</b>
+    <p class="sub" id="rpIntro" style="text-align:left;margin:6px 0 0"></p>
+    <div class="card" id="rpForm" style="margin-top:12px">
+      <div class="fld" id="rpRepBox"><select id="rpRep" style="padding-left:14px"></select></div>
+      <div class="fld"><select id="rpMonth" style="padding-left:14px"></select></div>
+      <div class="note" id="rpDone"></div>
+      <div class="fld"><textarea id="rpMsg" style="padding-left:14px" maxlength="4000" placeholder="Message to go with the report (optional)"></textarea></div>
+      <div class="fld"><input id="rpFiles" type="file" multiple style="text-align:left;padding:13px 14px"></div>
+      <div class="rpfiles" id="rpFileInfo">Attach the report (up to 5 files, 14 MB in total).</div>
+      <p class="note" id="rpCopy"></p>
+      <button class="btn" id="rpBtn" onclick="doReport()">Upload and send report</button>
+      <div class="msg" id="rpOut"></div>
+    </div>
+    <div id="rpStatusBox"></div>
+    <div id="rpMineBox"></div>
+    <div id="rpAllBox"></div>
+    <button class="ghost" onclick="show('vHome')">Back</button>
+  </div>
+
   <div class="hide" id="vSched">
     <b>Huddles &amp; morning devotions</b>
     <p class="sub" style="text-align:left;margin:6px 0 0" id="schSub">Who leads each day. The person on duty gets an email at 6 PM the evening before and at 6 AM on the day.</p>
@@ -439,7 +465,7 @@
 <script>
   var API = 'https://script.google.com/macros/s/AKfycbwywxqT9UkioBXPCTy54qz7tH3gIAhAuaL1MXGnyocOgZb9VmoDIqcMDwd-UjDg8DgI/exec';
   var SCH = null, schKind = 'h', secKey = '', secName = '', nav = [], MAXUP = 15 * 1024 * 1024, AUD = {}, mg = null, bcFiles = [], siSection = '', bcScope = 'all', curView = '', fbFile = null, fbReturn = 'vSec';
-  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vSched','vIssue','vPw'];
+  var token = '', SECS = {}, VIEWS = ['vIn','vUp','vForgot','vWait','vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vSched','vReports','vIssue','vPw'];
   var IC = {
     mail:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 7 8 6 8-6"/>',
     lock:'<rect x="5" y="11" width="14" height="9" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
@@ -486,7 +512,7 @@
 
   function show(v) {
     VIEWS.forEach(function (x) { $(x).classList.toggle('hide', x !== v); });
-    var inside = ['vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vSched','vIssue','vPw'].indexOf(v) > -1;
+    var inside = ['vHome','vSec','vFolder','vRequest','vMgmt','vBroadcast','vSecIssue','vFeedback','vMyFb','vSched','vReports','vIssue','vPw'].indexOf(v) > -1;
     curView = v;
     $('sub').classList.toggle('hide', inside);
     $('logoFull').classList.toggle('hide', inside); $('logoMini').classList.toggle('hide', !inside);
@@ -556,6 +582,12 @@
         var mb = document.createElement('button'); mb.className = 'tile'; mb.style.setProperty('--tc', '#6b4fbb');
         mb.innerHTML = '<span class="ti">' + svg('megaphone') + '</span><span><b>Management</b><small>Broadcast messages</small></span><span class="go">' + svg('chev') + '</span>';
         mb.onclick = openMgmt; $('tiles').appendChild(mb);
+      }
+      if (r.reports) {
+        var rb = document.createElement('button'); rb.className = 'tile'; rb.style.setProperty('--tc', '#d98a00');
+        rb.innerHTML = '<span class="ti">' + svg('file') + '</span><span><b>Monthly reports</b><small></small></span><span class="go">' + svg('chev') + '</span>';
+        rb.querySelector('small').textContent = r.reports.submit ? 'Upload your report, due each month' : 'Reports sent to you';
+        rb.onclick = openReports; $('tiles').appendChild(rb);
       }
       ROOTS.forEach(function (s) {
         var ok = r.sections.indexOf(s.k) > -1, b = document.createElement('button');
@@ -1115,6 +1147,99 @@
     $('foTitle').textContent = 'Operation'; $('foCrumb').textContent = ''; $('foList').innerHTML = ''; $('foUp').classList.add('hide');
     say('foMsg', 'Loading...', true); show('vFolder');
     call('opHome', [token], function (h) { nav[0].id = h.id; showFolder(h); }, function (e) { say('foMsg', e.message); });
+  }
+  // ---------- monthly reports ----------
+  var rpData = null;
+  function openReports() {
+    say('rpOut', ''); $('rpForm').classList.add('hide'); ['rpStatusBox', 'rpMineBox', 'rpAllBox'].forEach(function (i) { $(i).innerHTML = ''; });
+    $('rpIntro').textContent = 'Loading...'; show('vReports'); loadReports();
+  }
+  function rpRow(title, sub, chipText, chipCls, extra) {
+    var d = document.createElement('div'); d.className = 'rp';
+    var b = document.createElement('b'); b.textContent = title; d.appendChild(b);
+    if (sub) { var sm = document.createElement('small'); sm.textContent = sub; d.appendChild(sm); }
+    if (chipText) { var c = document.createElement('span'); c.className = 'chip ' + chipCls; c.textContent = chipText; d.appendChild(c); }
+    if (extra) d.appendChild(extra);
+    return d;
+  }
+  function rpLink(url) { var a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'Open in Drive'; var w = document.createElement('div'); w.style.marginTop = '6px'; w.appendChild(a); return w; }
+  function loadReports() {
+    call('reportHome', [token], function (h) {
+      rpData = h;
+      var intro = [];
+      if (h.canSubmit) intro.push('Each report is due on day ' + h.deadlineDay + ' of the next month (the January report is due on ' + h.deadlineDay + ' February). A reminder is emailed on day ' + h.remindDay + '.');
+      if (h.canView) intro.push('You receive a copy of every report by email.');
+      $('rpIntro').textContent = intro.join(' ');
+      $('rpForm').classList.toggle('hide', !h.canSubmit);
+      if (h.canSubmit) {
+        var rs = $('rpRep'); rs.innerHTML = '';
+        h.reports.forEach(function (r, i) { var o = document.createElement('option'); o.value = r.name; o.textContent = r.name; rs.appendChild(o); });
+        $('rpRepBox').classList.toggle('hide', h.reports.length < 2);
+        var ms = $('rpMonth'); ms.innerHTML = '';
+        h.months.forEach(function (m) {
+          var o = document.createElement('option'); o.value = m.key;
+          o.textContent = m.label + (m.late ? '  (late)' : '');
+          if (m.late && !h.acceptLate) o.disabled = true;
+          ms.appendChild(o);
+        });
+        rs.onchange = ms.onchange = rpUpdate; rpUpdate();
+      }
+      var sb = $('rpStatusBox'); sb.innerHTML = '';
+      if (h.canView && h.status) {
+        h.status.forEach(function (g) {
+          sb.appendChild(grp('Status: ' + g.month));
+          g.items.forEach(function (it) {
+            sb.appendChild(rpRow(it.name, it.submitted ? 'By ' + it.by + '  \u00b7  ' + it.when : 'Not received yet (' + it.role + ')',
+              it.submitted ? (it.late ? 'Received late' : 'Received') : 'Missing', it.submitted ? (it.late ? 'wait' : 'ok') : 'bad'));
+          });
+        });
+      }
+      var mb = $('rpMineBox'); mb.innerHTML = '';
+      if (h.canSubmit) {
+        mb.appendChild(grp('Your uploads'));
+        if (!h.mine.length) { var n = document.createElement('div'); n.className = 'note'; n.textContent = 'You have not uploaded a report yet.'; mb.appendChild(n); }
+        h.mine.forEach(function (r) { mb.appendChild(rpRow(r.report + ': ' + r.month, 'Sent ' + r.when + '  \u00b7  ' + r.files, r.late ? 'Late' : 'On time', r.late ? 'wait' : 'ok', rpLink(r.folder))); });
+      }
+      var ab = $('rpAllBox'); ab.innerHTML = '';
+      if (h.canView && h.received) {
+        ab.appendChild(grp('Reports received'));
+        if (!h.received.length) { var n2 = document.createElement('div'); n2.className = 'note'; n2.textContent = 'No reports yet.'; ab.appendChild(n2); }
+        h.received.forEach(function (r) {
+          var ex = document.createElement('div');
+          if (r.message) { var p = document.createElement('p'); p.textContent = r.message; ex.appendChild(p); }
+          ex.appendChild(rpLink(r.folder));
+          ab.appendChild(rpRow(r.report + ': ' + r.month, r.by + ' (' + r.role + ')  \u00b7  ' + r.when, r.late ? 'Late' : 'On time', r.late ? 'wait' : 'ok', ex));
+        });
+      }
+    }, function (e) { $('rpIntro').textContent = ''; say('rpOut', e.message); $('rpForm').classList.remove('hide'); });
+  }
+  function rpUpdate() {
+    if (!rpData || !rpData.canSubmit) return;
+    var ri = $('rpRep').selectedIndex, mi = $('rpMonth').selectedIndex;
+    var rep = rpData.reports[Math.max(ri, 0)], sent = rep && rep.done[Math.max(mi, 0)];
+    $('rpCopy').textContent = 'A copy is emailed to: ' + (rep ? rep.copyTo : '') + '. It is also saved in Drive.';
+    var mo = rpData.months[Math.max(mi, 0)];
+    $('rpDone').textContent = (mo ? (mo.late ? 'Was due ' : 'Due ') + mo.deadline + '. ' : '') + (sent ? 'A report for this month was already sent; sending again adds another copy.' : '');
+  }
+  $('rpFiles').onchange = function () {
+    var f = this.files, t = [];
+    for (var i = 0; i < f.length; i++) t.push(f[i].name);
+    $('rpFileInfo').textContent = t.length ? t.length + ' file' + (t.length > 1 ? 's' : '') + ': ' + t.join(', ') : 'Attach the report (up to 5 files, 14 MB in total).';
+  };
+  function doReport() {
+    var files = $('rpFiles').files;
+    if (!files.length) return say('rpOut', 'Please attach the report.');
+    if (files.length > 5) return say('rpOut', 'Please attach 5 files at most.');
+    $('rpBtn').disabled = true; say('rpOut', 'Uploading...', true);
+    readAll(files, 14 * 1048576, 14 * 1048576, function (e, list) {
+      if (e) { $('rpBtn').disabled = false; return say('rpOut', e.message); }
+      call('submitReport', [token, { report: $('rpRep').value, month: $('rpMonth').value, message: $('rpMsg').value, files: list }], function (r) {
+        $('rpBtn').disabled = false; $('rpMsg').value = ''; $('rpFiles').value = ''; $('rpFiles').onchange();
+        say('rpOut', 'Report sent' + (r.late ? ' (marked late)' : '') + '. ' + (r.copies ? 'A copy went to ' + r.copies + ' people and it is saved in Drive.' : 'It is saved in Drive.') +
+          (r.emailed || !r.copies ? '' : ' (The emails could not be sent, but the report is saved.)'), true);
+        loadReports();
+      }, function (e2) { $('rpBtn').disabled = false; say('rpOut', e2.message); });
+    });
   }
   function openRequest() { say('rqOut', ''); show('vRequest'); loadMyRequests(); }
   function doRequest() {
