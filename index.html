@@ -1177,11 +1177,14 @@
         $('rpRepBox').classList.toggle('hide', h.reports.length < 2);
         var ms = $('rpMonth'); ms.innerHTML = '';
         h.months.forEach(function (m) {
-          var o = document.createElement('option'); o.value = m.key;
+          if (m.late && !h.acceptLate) return;                       // closed months are not offered
+          var o = document.createElement('option'); o.value = m.key; o.setAttribute('data-i', h.months.indexOf(m));
           o.textContent = m.label + (m.late ? '  (late)' : '');
-          if (m.late && !h.acceptLate) o.disabled = true;
           ms.appendChild(o);
         });
+        var closed = !ms.options.length;
+        if (closed) { var c = h.months[0], o2 = document.createElement('option'); o2.textContent = 'No month is open for upload'; ms.appendChild(o2); }
+        ms.disabled = closed; $('rpBtn').disabled = closed; $('rpFiles').disabled = closed; $('rpMsg').disabled = closed;
         rs.onchange = ms.onchange = rpUpdate; rpUpdate();
       }
       var sb = $('rpStatusBox'); sb.innerHTML = '';
@@ -1215,10 +1218,12 @@
   }
   function rpUpdate() {
     if (!rpData || !rpData.canSubmit) return;
-    var ri = $('rpRep').selectedIndex, mi = $('rpMonth').selectedIndex;
-    var rep = rpData.reports[Math.max(ri, 0)], sent = rep && rep.done[Math.max(mi, 0)];
+    var ri = $('rpRep').selectedIndex, mo0 = $('rpMonth').selectedOptions[0];
+    var mi = mo0 && mo0.getAttribute('data-i') !== null ? Number(mo0.getAttribute('data-i')) : -1;
+    var rep = rpData.reports[Math.max(ri, 0)], sent = rep && mi > -1 && rep.done[mi];
+    if (mi < 0) { $('rpCopy').textContent = ''; $('rpDone').textContent = 'Uploads are closed. Each report closes after day ' + rpData.deadlineDay + ' of the next month, and the next one opens on day 1. Please contact the M and E officer if you still need to send one.'; return; }
     $('rpCopy').textContent = 'A copy is emailed to: ' + (rep ? rep.copyTo : '') + '. It is also saved in Drive.';
-    var mo = rpData.months[Math.max(mi, 0)];
+    var mo = rpData.months[mi];
     $('rpDone').textContent = (mo ? (mo.late ? 'Was due ' : 'Due ') + mo.deadline + '. ' : '') + (sent ? 'A report for this month was already sent; sending again adds another copy.' : '');
   }
   $('rpFiles').onchange = function () {
